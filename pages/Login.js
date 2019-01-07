@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, AsyncStorage, Alert } from 'react-native';
+import { StyleSheet, Text, View, AsyncStorage, Alert, Image } from 'react-native';
 import { Button }  from "react-native-material-ui";
 import { TextField } from 'react-native-material-textfield';
 
@@ -19,7 +19,10 @@ class Login extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <Text style={styles.welcome}>Taskster</Text>
+                <Image
+                    style={styles.logo}
+                    source={require("./assets/images/taskster.png")}/>
+
                 <TextField
                     label={'Login'}
                     keyboardType={'email-address'}
@@ -106,6 +109,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         margin: 10,
     },
+    logo: {
+        alignSelf: 'center',
+    }
 
 });
 
