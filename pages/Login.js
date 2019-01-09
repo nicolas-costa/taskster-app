@@ -2,7 +2,12 @@ import React from 'react';
 import { StyleSheet, Text, View, AsyncStorage, Alert, Image } from 'react-native';
 import { Button }  from "react-native-material-ui";
 import { TextField } from 'react-native-material-textfield';
+import { StackActions, NavigationActions } from 'react-navigation';
 
+const resetAction = StackActions.reset({
+    index: 0,
+    actions: [NavigationActions.navigate({ routeName: 'TasksMain' })],
+});
 
 class Login extends React.Component {
 
@@ -17,6 +22,13 @@ class Login extends React.Component {
     };
 
     render() {
+
+        AsyncStorage.getItem('token').then((token) => {
+            if(token !== undefined)
+                this.props.navigation.dispatch(resetAction)
+
+        });
+
         return (
             <View style={styles.container}>
                 <Image
@@ -81,7 +93,7 @@ class Login extends React.Component {
             {
                 AsyncStorage.setItem('token', res.status, () => {
                     // Open home
-                    this.props.navigation.navigate({routeName:'TasksMain'})
+                    this.props.navigation.dispatch(resetAction)
 
                 });
 
