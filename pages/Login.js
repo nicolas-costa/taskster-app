@@ -4,6 +4,7 @@ import { Button }  from "react-native-material-ui";
 import { TextField } from 'react-native-material-textfield';
 import { StackActions, NavigationActions } from 'react-navigation';
 
+
 const resetAction = StackActions.reset({
     index: 0,
     actions: [NavigationActions.navigate({ routeName: 'TasksMain' })],
@@ -29,7 +30,10 @@ class Login extends React.Component {
 
         });
 
+
+
         return (
+
             <View style={styles.container}>
                 <Image
                     style={styles.logo}
@@ -47,6 +51,8 @@ class Login extends React.Component {
                     secureTextEntry={true}
                     onChangeText={(text) => this.setState({pass: text})}
                 />
+
+
 
                 <Button
                     onPress={this.logIn}
@@ -72,7 +78,7 @@ class Login extends React.Component {
         });
 
         fetch('https://taskster-api.herokuapp.com/api/v1/login',{
-            method:'POST',
+            method:'PATCH',
             headers:{
                 'Content-Type':'application/json'
             },

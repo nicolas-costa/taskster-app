@@ -36,9 +36,8 @@ export default class PendingTasks extends React.Component {
                     style={styles.list}
                     data={this.state.tasks}
                     renderItem={this._renderItem}
-                    refre
                 />
-                <ActionButton/>
+
 
             </View>
 
@@ -97,7 +96,8 @@ export default class PendingTasks extends React.Component {
             content = data.item.content.substring(0,100) + '...';
         else content = data.item.content;
 
-        return <Card style={styles.card}>
+        return <Card style={styles.card}
+                     onPress={() => {this.props.navigation.navigate('ViewTask', {item:data.item})}}>
                     <ImageBackground
                         style={styles.thumb}
                         source={{uri:'https://taskster-api.herokuapp.com/images/default/bk/bk' + bk + '.jpg'}}>
