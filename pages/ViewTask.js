@@ -16,6 +16,8 @@ export default class ViewTask extends React.Component {
     constructor(props){
         super(props);
 
+        let _car = null;
+
         this.state = {
             id:null,
             title:'',
@@ -61,6 +63,7 @@ export default class ViewTask extends React.Component {
                         renderItem={this._renderThumb}
                         itemWidth={width - leftPadding}
                         sliderWidth={width - leftPadding}
+                        ref={(c) => {this._car = c}}
                         onSnapToItem={(slideIndex) =>
                         {
                             this.setState({bk:slideIndex})
