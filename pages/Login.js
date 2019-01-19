@@ -30,8 +30,6 @@ class Login extends React.Component {
 
         });
 
-
-
         return (
 
             <View style={styles.container}>
@@ -51,8 +49,6 @@ class Login extends React.Component {
                     secureTextEntry={true}
                     onChangeText={(text) => this.setState({pass: text})}
                 />
-
-
 
                 <Button
                     onPress={this.logIn}

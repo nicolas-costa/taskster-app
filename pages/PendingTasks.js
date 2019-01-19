@@ -1,5 +1,7 @@
 import React from 'react';
-import {AsyncStorage, StyleSheet, Text, View, FlatList, ImageBackground } from 'react-native';
+import { AsyncStorage, StyleSheet,
+        Text, View, ActivityIndicator,
+        FlatList, ImageBackground } from 'react-native';
 import { Toolbar, Card, ActionButton } from 'react-native-material-ui';
 
 export default class PendingTasks extends React.Component {
@@ -7,7 +9,8 @@ export default class PendingTasks extends React.Component {
     constructor(props){
         super(props);
 
-        this.state = {tasks:[]};
+        this.state = {tasks:[],
+                      spinner: true,};
     }
 
     static navigationOptions = {
@@ -18,6 +21,7 @@ export default class PendingTasks extends React.Component {
 
         return (
             <View style={styles.container}>
+
                 <Toolbar
                     style={styles.toolbar}
                     leftElement="menu"
@@ -27,35 +31,51 @@ export default class PendingTasks extends React.Component {
                         placeholder: 'Pesquisar',
                     }}
                     rightElement={{
-                        menu:{icon:'more-vert',
-                            labels:['Sobre...', 'Sair']}
+                        menu:{
+                            icon:'more-vert',
+                            labels:['Sobre...', 'Sair']
+                        }
                     }}
                 />
 
+
+
                 <FlatList
+                    ListEmptyComponent={<ActivityIndicator style={{alignSelf: 'center'}} size="large" color="#0000ff" animating={this.state.spinner} />}
                     style={styles.list}
                     data={this.state.tasks}
                     renderItem={this._renderItem}
+                    keyExtractor={(item: object, index: number) => {item.id.toString();}}
+                    onRefresh={console.log('refresh')}
+                    refreshing={() => {this.state.spinner}}
                 />
-
 
             </View>
 
         );
     }
+
     componentDidMount(): void {
         this._refreshData();
     }
 
     _refreshData = () => {
 
-        AsyncStorage.getItem('token').then((token) =>
+        this.setState({spinner: true, tasks:[]});
+
+        // clear the tasks array
+
+        //this.setState({tasks:[]});
+
+        AsyncStorage.getItem('token')
+        .then((token) =>
         {
             let body = JSON.stringify({
                 offset:this.state.tasks.length
             });
 
-            fetch('https://taskster-api.herokuapp.com/api/v1/tasks',{
+            fetch('https://taskster-api.herokuapp.com/api/v1/tasks',
+            {
                 method:'POST',
                 headers:{
                     'Content-Type':'application/json',
@@ -65,13 +85,17 @@ export default class PendingTasks extends React.Component {
             })
             .then((response) =>
             {
+
                 let body = JSON.parse(response._bodyText);
 
-                this.setState({tasks:this._addKeysToTasks(body.status)});
+                this.setState({tasks:body.status, spinner: false});
+
+                //this.setState({tasks:this._addKeysToTasks(body.status)});
 
             })
             .catch(error =>
             {
+                this.setState({spinner: false});
                 console.log(error)
             });
 
@@ -86,8 +110,8 @@ export default class PendingTasks extends React.Component {
         });
     };
 
-    _renderItem = data =>
-    {
+    _renderItem = (data) => {
+
         let bk = data.item.bk === null ? '0': data.item.bk;
 
         let content;
@@ -97,7 +121,13 @@ export default class PendingTasks extends React.Component {
         else content = data.item.content;
 
         return <Card style={styles.card}
-                     onPress={() => {this.props.navigation.navigate('ViewTask', {item:data.item})}}>
+                     onPress={() => {
+                         this.props.navigation
+                             .navigate('ViewTask', {
+                                 item:data.item,
+                                 refresh:() => this._refreshData()
+                             })
+                     }}>
                     <ImageBackground
                         style={styles.thumb}
                         source={{uri:'https://taskster-api.herokuapp.com/images/default/bk/bk' + bk + '.jpg'}}>

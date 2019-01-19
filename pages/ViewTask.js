@@ -1,9 +1,15 @@
 import React from 'react';
 import Carousel from 'react-native-snap-carousel';
-import {Image, View, StyleSheet, AsyncStorage, Alert } from 'react-native';
+import {Image, View, StyleSheet,
+        AsyncStorage, Alert, Text,
+        Dimensions, ScrollView } from 'react-native';
 import { TextField } from 'react-native-material-textfield';
 import { Button } from 'react-native-material-ui';
-import DateTimePicker from 'react-native-modal-datetime-picker'
+import DateTimePicker from 'react-native-modal-datetime-picker';
+import { Switch } from 'react-native-paper';
+
+const { width, height } = Dimensions.get('window');
+const leftPadding = 15;
 
 export default class ViewTask extends React.Component {
 
@@ -19,9 +25,9 @@ export default class ViewTask extends React.Component {
             schedule:null,
             owner_id:null,
             dpvisible:false,
+            scrH:0,
 
         }
-
     }
 
     _renderThumb({item, idx})
@@ -34,93 +40,113 @@ export default class ViewTask extends React.Component {
         );
     }
 
+    _onContentSizeChange = (contentW, contentH) => {
+
+        this.setState({scrH:contentH});
+    }
+
     render() {
 
         return (
-            <View style={styles.container}>
-                <Carousel data={[{id:'0'}, {id:'1'}, {id:'2'}, {id:'3'}, {id:'4'}, {id:'5'}]}
-                      style={styles.container}
-                      renderItem={this._renderThumb}
-                      itemWidth={300}
-                      firstItem={() =>
-                      {
-                          if(this.state.bk === null)
-                              return 0;
-                          else return this.state.bk;
-                      }}
-                      sliderWidth={300}
-                      ref={(c) =>
-                      {
-                          this._carousel = c;
-                      }}
-                      onSnapToItem={(slideIndex) =>
-                      {
-                          this.setState({bk:slideIndex})
-                      }}
-                  />
 
-                <TextField
-                    containerStyle={{marginBottom: 20}}
-                    label={'Título'}
-                    keyboardType={'default'}
-                    onChangeText={(text) => this.setState({title: text})}
-                    value={this.state.title}
-                />
+            <ScrollView
+                contentContainerStyle={styles.container}
+                scrollEnabled={true}
+                onContentSizeChange={this._onContentSizeChange}>
 
-                <TextField
-                    containerStyle={{marginBottom: 20}}
-                    label={'Conteúdo'}
-                    keyboardType={'default'}
-                    value={this.state.content}
-                    multiline={true}
-                    onChangeText={
-                        (text) =>
+                <View style={styles.firstView}>
+
+                    <Carousel data={[{id:'0'}, {id:'1'}, {id:'2'}, {id:'3'}, {id:'4'}, {id:'5'}]}
+                        style={styles.container}
+                        renderItem={this._renderThumb}
+                        itemWidth={width - leftPadding}
+                        sliderWidth={width - leftPadding}
+                        onSnapToItem={(slideIndex) =>
                         {
-                            this.setState({title: text})
-                        }
-                    }
-                />
+                            this.setState({bk:slideIndex})
+                        }}
 
-                <Button
-                    text={"Agendamento..."}
-                    raised
-                    secondary
-                    onPress={
-                        () =>
+                    />
+
+                    <TextField
+                        containerStyle={{marginBottom: 20}}
+                        label={'Título'}
+                        keyboardType={'default'}
+                        onChangeText={(text) => this.setState({title: text})}
+                        value={this.state.title}
+                    />
+
+                    <TextField
+                        containerStyle={{marginBottom: 20}}
+                        label={'Conteúdo'}
+                        keyboardType={'default'}
+                        value={this.state.content}
+                        multiline={true}
+                        onChangeText={ (text) =>
+                        {
+                            this.setState({content: text})
+                        }}
+                    />
+
+                    <Button
+                        text={"Agendamento..."}
+                        raised
+                        secondary
+                        icon={'alarm'}
+                        onPress={() =>
                         {
                             this.setState({dpvisible :true})
-                        }
-                    }
+                        }}
+                    />
 
-                />
-
-                <DateTimePicker
-                    isVisible={this.state.dpvisible}
-                    mode={"datetime"}
-                    onConfirm={(date) =>
-                    {
-
-                        this.setState({dpvisible :false,
-                                            schedule:date.toISOString()
-                                                .slice(0, 19)
-                                                .replace('T', ' ')})
-                    }}
-                    onCancel={
-                        () =>
+                    <DateTimePicker
+                        isVisible={this.state.dpvisible}
+                        mode={"datetime"}
+                        onConfirm={(date) =>
                         {
-                            this.setState({dpvisible :false})
+
+                            this.setState({dpvisible :false,
+                                schedule:date.toISOString()
+                                    .slice(0, 19)
+                                    .replace('T', ' ')})
+                        }}
+                        onCancel={
+                            () =>
+                            {
+                                this.setState({dpvisible :false})
+                            }
                         }
-                    }
-                />
+                    />
 
-                <Button
-                    onPress={() => {this._updateTaskInfo()}}
-                    raised
-                    text="Salvar"
-                    primary
-                />
+                </View>
 
-            </View>
+                <View style={styles.secondView}>
+
+                    <Text>Concluída: </Text>
+
+                    <Switch
+                        value={this.state.done}
+                        onValueChange={(state) =>
+                        {
+                            this.setState({done:state});
+                        }}
+                    />
+
+                </View>
+
+                <View>
+
+                    <Button
+                        icon={'check'}
+                        onPress={() => {this._updateTaskInfo()}}
+                        raised
+                        text="Salvar"
+                        primary
+                    />
+
+                </View>
+
+            </ScrollView>
 
         );
     }
@@ -135,25 +161,27 @@ export default class ViewTask extends React.Component {
             stateItemData[key] = val;
 
         }
-        this.setState(stateItemData);
-        this.setState({dpvisible:false});
+        stateItemData.dpvisible = false;
 
+        this.setState(stateItemData);
+
+        // this is a small hax to make the carousel update correctly
+
+        setTimeout(() => {this._car.snapToItem(item.bk);}, 500)
 
     }
 
     _updateTaskInfo(){
 
+
         let body = {id:this.state.id,
-        new:{}};
+                    new:{}};
 
         for(let [key, val] of Object.entries(this.state))
         {
-            console.log(key, val);
             if(key === 'owner_id' || key === 'dpvisible' || key === 'key') continue;
             else body.new[key] = val;
         }
-
-        console.log(body);
 
         AsyncStorage.getItem('token')
         .then((token) =>
@@ -170,7 +198,6 @@ export default class ViewTask extends React.Component {
             })
             .then((response) => {
 
-                console.log(response);
             })
             .catch((error) => {
                 Alert.alert('Erro', error.message);
@@ -178,7 +205,13 @@ export default class ViewTask extends React.Component {
 
         }).catch((error) => {
             Alert.alert('Erro', error.message);
-        })
+        });
+
+        let refresh = this.props.navigation.getParam('refresh');
+
+        // call this method to update the state of the previous activity
+
+        refresh();
 
         this.props.navigation.goBack();
 
@@ -188,8 +221,20 @@ export default class ViewTask extends React.Component {
 
 const styles = StyleSheet.create({
     container:{
-        flex:1,
         padding:8,
-        borderWidth: 1, borderColor:'red',
+        backgroundColor:'rgb(250,250,250)',
+        alignItems: 'stretch',
+        flexDirection:'column',
+        justifyContent: 'space-around',
     },
+    firstView:{
+        flexGrow: 1,
+        marginBottom:14,
+    },
+    secondView:{
+        marginBottom:14,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems:'center',
+    }
 });
