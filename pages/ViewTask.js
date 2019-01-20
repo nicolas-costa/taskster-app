@@ -28,6 +28,9 @@ export default class ViewTask extends React.Component {
             owner_id:null,
             dpvisible:false,
             scrH:0,
+            newItem: false,
+            titleErr:'',
+            contentErr:'',
 
         }
     }
@@ -47,6 +50,130 @@ export default class ViewTask extends React.Component {
         this.setState({scrH:contentH});
     }
 
+    _onTaskSubmit()
+    {
+
+        let errMsg = 'Este campo é obrigatório.';
+
+        let titleErr = '';
+        let contentErr = '';
+
+        this.state.title === '' ?  titleErr = errMsg : titleErr = '';
+        this.state.content === '' ?  contentErr = errMsg : contentErr = '';
+
+        this.setState({titleErr:titleErr,
+                            contentErr:contentErr})
+
+        if(titleErr === '' && contentErr === '')
+            this._updateTaskInfo();
+
+    }
+
+    componentDidMount(): void {
+
+        let newItm = this.props.navigation.getParam('new')
+
+        if(newItm === false)
+        {
+            let item = this.props.navigation.getParam('item');
+
+            let stateItemData = this._duplicateObject(item);
+
+            stateItemData.dpvisible = false;
+
+            this.setState(stateItemData);
+
+            // this is a small hax to make the carousel update correctly
+
+            setTimeout(() => {this._car.snapToItem(item.bk);}, 500)
+        }
+        else this.setState({newItem: newItm});
+
+    }
+
+    _updateTaskInfo(){
+
+        let body = {id:this.state.id,
+                    new:{}};
+
+        // roll through the properties of state
+        // and make a new object only with the
+        // properties needed by the API endpoint
+
+        body.new = this._duplicateObject(this.state, 'schedule');
+
+        /*for(let [key, val] of Object.entries(this.state))
+        {
+            body.new[key] = val;
+            if(key === 'schedule') break; // this is the last attribute we want
+
+        }*/
+
+
+        AsyncStorage.getItem('token')
+        .then((token) =>
+        {
+            let url = '';
+            let method = '';
+
+            if(this.state.newItem === true)
+            {
+                method = 'PUT';
+                url = 'https://taskster-api.herokuapp.com/api/v1/task/add';
+            }
+            else {
+                method = 'PATCH';
+                url = 'https://taskster-api.herokuapp.com/api/v1/task/edit';
+            }
+
+            fetch(url,
+                {
+                    method: method,
+                    headers:
+                    {
+                        'Content-Type':'application/json',
+                        'Authorization':'Bearer ' + token // TODO: interpolation es6
+                    },
+                    body: JSON.stringify(body)
+            })
+            .then((response) => {
+                console.log(response);
+            })
+            .catch((error) => {
+                Alert.alert('Erro', error.message);
+            })
+
+        }).catch((error) => {
+            Alert.alert('Erro', error.message);
+        });
+
+        let refresh = this.props.navigation.getParam('refresh');
+
+        console.log('refresh closure' + this.state.refresh);
+
+        // call this method to update the state of the previous activity
+
+        refresh();
+
+        this.props.navigation.goBack();
+
+    }
+
+    // small helper method to loop to object attributes
+
+    _duplicateObject( obj: Object, threshold: string = null): Object
+    {
+        let newobj = {};
+        for(let [key, val] of Object.entries(obj))
+        {
+            newobj[key] = val;
+            if(key === threshold)
+                break;
+        }
+
+        return newobj;
+    }
+
     render() {
 
         return (
@@ -56,9 +183,11 @@ export default class ViewTask extends React.Component {
                 scrollEnabled={true}
                 onContentSizeChange={this._onContentSizeChange}>
 
-                <View style={styles.firstView}>
+                <View
+                    style={styles.firstView}>
 
-                    <Carousel data={[{id:'0'}, {id:'1'}, {id:'2'}, {id:'3'}, {id:'4'}, {id:'5'}]}
+                    <Carousel
+                        data={[{id:'0'}, {id:'1'}, {id:'2'}, {id:'3'}, {id:'4'}, {id:'5'}]}
                         style={styles.container}
                         renderItem={this._renderThumb}
                         itemWidth={width - leftPadding}
@@ -72,11 +201,13 @@ export default class ViewTask extends React.Component {
                     />
 
                     <TextField
+
                         containerStyle={{marginBottom: 20}}
                         label={'Título'}
                         keyboardType={'default'}
                         onChangeText={(text) => this.setState({title: text})}
                         value={this.state.title}
+                        error={this.state.titleErr}
                     />
 
                     <TextField
@@ -85,6 +216,7 @@ export default class ViewTask extends React.Component {
                         keyboardType={'default'}
                         value={this.state.content}
                         multiline={true}
+                        error={this.state.contentErr}
                         onChangeText={ (text) =>
                         {
                             this.setState({content: text})
@@ -141,7 +273,7 @@ export default class ViewTask extends React.Component {
 
                     <Button
                         icon={'check'}
-                        onPress={() => {this._updateTaskInfo()}}
+                        onPress={() => {this._onTaskSubmit()}}
                         raised
                         text="Salvar"
                         primary
@@ -152,72 +284,6 @@ export default class ViewTask extends React.Component {
             </ScrollView>
 
         );
-    }
-
-    componentDidMount(): void {
-
-        let item = this.props.navigation.getParam('item');
-        let stateItemData = {}
-
-        for(let [key, val] of Object.entries(item))
-        {
-            stateItemData[key] = val;
-
-        }
-        stateItemData.dpvisible = false;
-
-        this.setState(stateItemData);
-
-        // this is a small hax to make the carousel update correctly
-
-        setTimeout(() => {this._car.snapToItem(item.bk);}, 500)
-
-    }
-
-    _updateTaskInfo(){
-
-
-        let body = {id:this.state.id,
-                    new:{}};
-
-        for(let [key, val] of Object.entries(this.state))
-        {
-            if(key === 'owner_id' || key === 'dpvisible' || key === 'key') continue;
-            else body.new[key] = val;
-        }
-
-        AsyncStorage.getItem('token')
-        .then((token) =>
-        {
-            fetch('https://taskster-api.herokuapp.com/api/v1/task/edit',
-                {
-                    method:'PATCH',
-                    headers:
-                    {
-                        'Content-Type':'application/json',
-                        'Authorization':'Bearer ' + token
-                    },
-                body: JSON.stringify(body)
-            })
-            .then((response) => {
-
-            })
-            .catch((error) => {
-                Alert.alert('Erro', error.message);
-            })
-
-        }).catch((error) => {
-            Alert.alert('Erro', error.message);
-        });
-
-        let refresh = this.props.navigation.getParam('refresh');
-
-        // call this method to update the state of the previous activity
-
-        refresh();
-
-        this.props.navigation.goBack();
-
     }
 
 }
