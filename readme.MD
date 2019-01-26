@@ -1,7 +1,7 @@
 ## Description
 This project is my first experience with react native  
 The app is a kind of Google keep.  
-I have no plans to putting it in App stores, once it is just for learning  
+I have no plans to put it in App stores, once it is just for learning  
 
 ## Screens
 
@@ -22,7 +22,7 @@ Edit task alarm date and time
 ![Screenshot](ss/4.png)
 
 ## Version
-0.1.2
+0.2.2
 
 ## License
 WTFPL
