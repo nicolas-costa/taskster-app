@@ -40,7 +40,7 @@ export default class ViewTask extends React.Component {
         return (
             <Image
                 style={{width:'100%', height:200,}}
-                source={{uri:'https://taskster-api.herokuapp.com/images/default/bk/bk' + item.id + '.jpg'}}
+                source={{uri:`https://taskster-api.herokuapp.com/images/default/bk/bk${item.id}.jpg`}}
             />
         );
     }
@@ -75,40 +75,57 @@ export default class ViewTask extends React.Component {
 
         if(newItm === false)
         {
-            let item = this.props.navigation.getParam('item');
+            let id = this.props.navigation.getParam('item_id');
 
-            let stateItemData = this._duplicateObject(item);
+            this._fetchItemData(id);
 
-            stateItemData.dpvisible = false;
-
-            this.setState(stateItemData);
+            this.setState({dpvisible:false});
 
             // this is a small hax to make the carousel update correctly
 
-            setTimeout(() => {this._car.snapToItem(item.bk);}, 500)
+            setTimeout(() => {this._car.snapToItem(this.state.bk);}, 500)
         }
         else this.setState({newItem: newItm});
+
+    }
+    _fetchItemData(id)
+    {
+
+        AsyncStorage.getItem('token')
+        .then((token) =>
+        {
+            fetch(`https://taskster-api.herokuapp.com/api/v1/task/${id}`,
+            {
+                method:'GET',
+                headers:{
+                    'Content-Type':'application/json',
+                    'Authorization':`Bearer ${token}`
+                },
+
+            }).then((result) =>
+            {
+                let resObj = JSON.parse(result._bodyText).status;
+
+                console.log(resObj)
+                this.setState(resObj);
+
+
+            }).catch((err) => {
+                console.log(err);
+            })
+        });
 
     }
 
     _updateTaskInfo(){
 
-        let body = {id:this.state.id,
-                    new:{}};
-
         // roll through the properties of state
         // and make a new object only with the
         // properties needed by the API endpoint
 
-        body.new = this._duplicateObject(this.state, 'schedule');
+        let body = this._duplicateObject(this.state, 'schedule');
 
-        /*for(let [key, val] of Object.entries(this.state))
-        {
-            body.new[key] = val;
-            if(key === 'schedule') break; // this is the last attribute we want
-
-        }*/
-
+        body.id = this.state.id;
 
         AsyncStorage.getItem('token')
         .then((token) =>
@@ -118,12 +135,12 @@ export default class ViewTask extends React.Component {
 
             if(this.state.newItem === true)
             {
-                method = 'PUT';
+                method = 'POST';
                 url = 'https://taskster-api.herokuapp.com/api/v1/task/add';
             }
             else {
-                method = 'PATCH';
-                url = 'https://taskster-api.herokuapp.com/api/v1/task/edit';
+                method = 'PUT';
+                url = `https://taskster-api.herokuapp.com/api/v1/task/edit/${body.id}` ;
             }
 
             fetch(url,
@@ -132,7 +149,7 @@ export default class ViewTask extends React.Component {
                     headers:
                     {
                         'Content-Type':'application/json',
-                        'Authorization':'Bearer ' + token // TODO: interpolation es6
+                        'Authorization':`Bearer ${token}`
                     },
                     body: JSON.stringify(body)
             })

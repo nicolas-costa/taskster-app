@@ -1,9 +1,12 @@
 import React from 'react';
 import { AsyncStorage, StyleSheet,
         Text, View, ActivityIndicator,
-        FlatList, ImageBackground } from 'react-native';
-import { Toolbar, Card, ActionButton } from 'react-native-material-ui';
+        FlatList, Dimensions } from 'react-native';
+import { Toolbar, ActionButton } from 'react-native-material-ui';
+import { Button, Card, Title, Paragraph } from 'react-native-paper';
 
+const { width, height } = Dimensions.get('window');
+const OFFSET = 100;
 
 export default class PendingTasks extends React.Component {
 
@@ -24,9 +27,6 @@ export default class PendingTasks extends React.Component {
 
     _refreshData = () => {
 
-
-        console.log('refreshing');
-
         this.setState({spinner: true, tasks:[]});
 
         // clear the tasks array
@@ -34,18 +34,14 @@ export default class PendingTasks extends React.Component {
         AsyncStorage.getItem('token')
         .then((token) =>
         {
-            let body = JSON.stringify({
-                offset:this.state.tasks.length
-            });
 
-            fetch('https://taskster-api.herokuapp.com/api/v1/tasks',
+            fetch(`https://taskster-api.herokuapp.com/api/v1/tasks/${this.state.tasks.length}`,
             {
-                method:'POST',
+                method:'GET',
                 headers:{
                     'Content-Type':'application/json',
-                    'Authorization':'Bearer ' + token // TODO: interpolation es6
-                },
-                body: body
+                    'Authorization':`Bearer ${token}`
+                }
             })
             .then((response) =>
             {
@@ -65,13 +61,6 @@ export default class PendingTasks extends React.Component {
 
     };
 
-    /*_addKeysToTasks = (tasks) => {
-
-        return tasks.map(task => {
-            return Object.assign(task, { key: task.id.toString() });
-        });
-    };*/
-
     _renderItem = (data) => {
 
         let bk = data.item.bk === null ? '0': data.item.bk;
@@ -82,25 +71,34 @@ export default class PendingTasks extends React.Component {
             content = data.item.content.substring(0,100) + '...';
         else content = data.item.content;
 
-        return <Card style={styles.card}
-                     onPress={() => {
-                         this.props.navigation
-                             .navigate('ViewTask', {
-                                 item:data.item,
-                                 refresh:() => this._refreshData(),
-                                 new:false
-                             })
-                     }}>
-                    <ImageBackground
-                        style={styles.thumb}
-                        source={
-                            {uri:'https://taskster-api.herokuapp.com/images/default/bk/bk' + bk + '.jpg'}
-                        }>
-                        <Text style={styles.cardTitle}>{data.item.title}</Text>
-                    </ImageBackground >
+        return <Card style={styles.card}>
+            <Card onPress={() => {
+                this.props.navigation
+                    .navigate('ViewTask', {
+                        item_id:data.item.id,
+                        refresh:() => this._refreshData(),
+                        new:false
+                    })
+                }}>
 
-                    <Text style={styles.cardContent}>{content}</Text>
-               </Card>
+                <Card.Cover
+                    source={{ uri: `https://taskster-api.herokuapp.com/images/default/bk/bk${bk}.jpg` }}
+                />
+                <Card.Content>
+                    <Title>{data.item.title}</Title>
+                    <Paragraph>{content}</Paragraph>
+                </Card.Content>
+                <Card.Actions>
+                    <Button style={styles.cardButton}
+                            icon={"check"} color={"green"}
+                            mode={"outlined"}>Concluir</Button>
+                    <Button style={styles.cardButton}
+                            icon={"close"} color={"red"}
+                            mode={"outlined"}>Exluir</Button>
+                </Card.Actions>
+            </Card>
+
+        </Card>
 
     }
 
@@ -126,7 +124,12 @@ export default class PendingTasks extends React.Component {
                 />
 
                 <FlatList
-                    ListEmptyComponent={<ActivityIndicator style={{alignSelf: 'center'}} size="large" color="#0000ff" animating={this.state.spinner} />}
+                    ListEmptyComponent={<ActivityIndicator
+                                        style={styles.spinner}
+                                        size="large"
+                                        color="#0000ff"
+                                        animating={this.state.spinner}
+                                        />}
                     style={styles.list}
                     data={this.state.tasks}
                     renderItem={this._renderItem}
@@ -138,7 +141,7 @@ export default class PendingTasks extends React.Component {
                     icon="add"
                     onPress={() => this.props.navigation
                         .navigate('ViewTask', {
-                            item:null,
+                            item_id:null,
                             refresh:() => this._refreshData(),
                             new:true
                         })}
@@ -164,23 +167,17 @@ const styles = StyleSheet.create({
         width:'100%',
     },
     card:{
+        marginLeft:4,
+        marginRight:4,
+        marginTop:4
     },
-    cardTitle: {
-        paddingLeft:8,
-        fontSize: 25,
-        position:'absolute',
-        bottom:8,
-        color:'white',
+    cardButton:{
+        marginRight:4,
+    },
+    spinner:{
+
+        marginTop: (height / 2) - OFFSET
 
     },
-    cardContent: {
-        paddingLeft:8,
-        paddingBottom:8,
-
-    },
-    thumb:{
-        width:'100%',
-        height:150,
-    }
 
 });
