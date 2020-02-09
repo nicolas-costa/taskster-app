@@ -10,4 +10,4 @@ I have no plans to putting it in App stores, once it is just for learning
 WTFPL
 
 ## Credits
-Master64k
+Nícolas Costa
